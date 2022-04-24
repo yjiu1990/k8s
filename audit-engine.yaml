@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: audit-engine
+  namespace: audit-engine
+  labels:
+    app: audit-sts
+spec:
+  replicas: 2
+  serviceName: "audit-engine"
+  selector:
+    matchLabels:
+      app: audit-sts
+  template:
+    metadata:
+      labels:
+        app: audit-sts
+    spec:
+      imagePullSecrets:
+       - name: backend
+      containers:
+      - name: audit-engine
+        image:  harbor.flatincbr.com/library/test:20220424160938_107
+        ports:
+        - containerPort: 5111
+        volumeMounts:
+        - mountPath: /root/logs
+          name: logs
+        - mountPath: /root/app/content_audit/config/app.json
+          name: config-volume
+          subPath: app.json
+      volumes:
+        - name: config-volume
+          configMap:
+            name: audit-config
+            items:
+            - key: app.json
+              path: app.json
+  volumeClaimTemplates:                       #定义创建PVC使用的模板
+  - metadata:
+      name: logs
+      annotations:  #这是指定storageclass
+        volume.beta.kubernetes.io/storage-class: managed-nfs-storage
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+         storage: 1Gi
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: audit-engine
+  namespace: default
+spec:
+  selector:
+    app: audit-sts
+  ports:
+  - protocol: TCP
+    port: 5111
+    targetPort: 5111
+  clusterIP: None
