@@ -20,7 +20,7 @@ spec:
        - name: backend
       containers:
       - name: audit-engine
-        image:  harbor.flatincbr.com/library/test:20220424160938_107
+        image:  {{IMAGE_URL}}
         ports:
         - containerPort: 5111
         volumeMounts:
